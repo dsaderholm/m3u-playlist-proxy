@@ -1,6 +1,9 @@
-name: m3u-playlist-proxy
-  services:
-    app:  # Define the service name
-      build:
-        context: .  # Path to the Dockerfile
-        dockerfile: Dockerfile  # Name of the Dockerfile
+version: '3.8'  # Specify the Docker Compose file version
+
+services:  # Define services section
+  app:  # Define the service name
+    build:  # Build configuration
+      context: .  # Path to the Dockerfile
+      dockerfile: Dockerfile  # Name of the Dockerfile
+    ports:  # Port mapping
+      - "4123:4123"  # Map host port 4123 to container port 4123
