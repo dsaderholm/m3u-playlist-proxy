@@ -315,6 +315,9 @@ label {
   console.log('Server is running on port 4123');
 });
 
+// Define your proxy DNS here
+const proxyDns = 'https://live.tv.saderholm.us';
+
 // Fetch content from URL
 async function fetchContent(url, data, dataType = 'text') {
   try {
@@ -328,6 +331,7 @@ async function fetchContent(url, data, dataType = 'text') {
       });
     }
 
+
     const response = await fetchUrl(url, headers);
     const buffer = response.content;
     let content;
@@ -336,6 +340,9 @@ async function fetchContent(url, data, dataType = 'text') {
       content = buffer;
     } else {
       content = buffer.toString('utf-8');
+
+      // Replace local IP addresses in M3U content with the proxy DNS
+      content = content.replace(/http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}):\d+/g, `http://${proxyDns}`);
     }
 
     return {
@@ -349,6 +356,7 @@ async function fetchContent(url, data, dataType = 'text') {
     return { content: null, status: 500, headers: {} };
   }
 }
+
 
 // Fetch URL and handle redirects
 function fetchUrl(requestUrl, headers, redirectCount = 0) {
