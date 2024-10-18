@@ -409,6 +409,7 @@ async function handlePlaylistRequest(req, res, playlistUrl, data) {
     }
 
     let playlistContent = result.content;
+    const baseUrl = new URL(req.url, `http://${req.headers.host}`).origin;
     playlistContent = rewritePlaylistUrls(playlistContent, baseUrl, data);
 
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -440,13 +441,14 @@ async function fetchEncryptionKey(res, url, data) {
 }
 
 // Rewrite URLs in the M3U8 playlist
-function rewriteUrls(content, baseUrl, proxyUrl, data) {
+// Rewrite URLs in the M3U8 playlist
+async function rewriteUrls(content, baseUrl, proxyUrl, data) {
   try {
     const lines = content.split('\n');
     const rewrittenLines = [];
     let isNextLineUri = false;
 
-    lines.forEach(line => {
+    for (const line of lines) {
       if (line.startsWith('#')) {
         if (line.includes('URI="')) {
           const uriMatch = line.match(/URI="([^"]+)"/i);
@@ -456,11 +458,12 @@ function rewriteUrls(content, baseUrl, proxyUrl, data) {
             uri = new URL(uri, baseUrl).href;
           }
 
-          const rewrittenUri = `${proxyUrl}?url=${encodeURIComponent(uri)}&data=${encodeURIComponent(data)}${line.includes('#EXT-X-KEY') ? '&key=true' : ''}`;
-          line = line.replace(uriMatch[1], rewrittenUri);
+          const resolvedProxyUrl = await resolveDns(new URL(proxyUrl).hostname);
+          const rewrittenUri = `${resolvedProxyUrl}?url=${encodeURIComponent(uri)}&data=${encodeURIComponent(data)}${line.includes('#EXT-X-KEY') ? '&key=true' : ''}`;
+          rewrittenLines.push(line.replace(uriMatch[1], rewrittenUri));
+        } else {
+          rewrittenLines.push(line);
         }
-
-        rewrittenLines.push(line);
 
         if (line.includes('#EXT-X-STREAM-INF')) {
           isNextLineUri = true;
@@ -473,14 +476,15 @@ function rewriteUrls(content, baseUrl, proxyUrl, data) {
           lineUrl = new URL(lineUrl, baseUrl).href;
         }
 
-        const fullUrl = `${proxyUrl}?${urlParam}=${encodeURIComponent(lineUrl)}&data=${encodeURIComponent(data)}${urlParam === 'url' ? '&type=/index.m3u8' : '&type=/index.ts'}`;
+        const resolvedProxyUrl = await resolveDns(new URL(proxyUrl).hostname);
+        const fullUrl = `${resolvedProxyUrl}?${urlParam}=${encodeURIComponent(lineUrl)}&data=${encodeURIComponent(data)}${urlParam === 'url' ? '&type=/index.m3u8' : '&type=/index.ts'}`;
         rewrittenLines.push(fullUrl);
 
         isNextLineUri = false;
       } else {
         rewrittenLines.push(line);
       }
-    });
+    }
 
     return rewrittenLines.join('\n');
   } catch (err) {
