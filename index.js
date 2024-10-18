@@ -441,14 +441,13 @@ async function fetchEncryptionKey(res, url, data) {
 }
 
 // Rewrite URLs in the M3U8 playlist
-// Rewrite URLs in the M3U8 playlist
-async function rewriteUrls(content, baseUrl, proxyUrl, data) {
+function rewriteUrls(content, baseUrl, proxyUrl, data) {
   try {
     const lines = content.split('\n');
     const rewrittenLines = [];
     let isNextLineUri = false;
 
-    for (const line of lines) {
+    lines.forEach(line => {
       if (line.startsWith('#')) {
         if (line.includes('URI="')) {
           const uriMatch = line.match(/URI="([^"]+)"/i);
@@ -458,12 +457,11 @@ async function rewriteUrls(content, baseUrl, proxyUrl, data) {
             uri = new URL(uri, baseUrl).href;
           }
 
-          const resolvedProxyUrl = await resolveDns(new URL(proxyUrl).hostname);
-          const rewrittenUri = `${resolvedProxyUrl}?url=${encodeURIComponent(uri)}&data=${encodeURIComponent(data)}${line.includes('#EXT-X-KEY') ? '&key=true' : ''}`;
-          rewrittenLines.push(line.replace(uriMatch[1], rewrittenUri));
-        } else {
-          rewrittenLines.push(line);
+          const rewrittenUri = `${proxyUrl}?url=${encodeURIComponent(uri)}&data=${encodeURIComponent(data)}${line.includes('#EXT-X-KEY') ? '&key=true' : ''}`;
+          line = line.replace(uriMatch[1], rewrittenUri);
         }
+
+        rewrittenLines.push(line);
 
         if (line.includes('#EXT-X-STREAM-INF')) {
           isNextLineUri = true;
@@ -476,15 +474,14 @@ async function rewriteUrls(content, baseUrl, proxyUrl, data) {
           lineUrl = new URL(lineUrl, baseUrl).href;
         }
 
-        const resolvedProxyUrl = await resolveDns(new URL(proxyUrl).hostname);
-        const fullUrl = `${resolvedProxyUrl}?${urlParam}=${encodeURIComponent(lineUrl)}&data=${encodeURIComponent(data)}${urlParam === 'url' ? '&type=/index.m3u8' : '&type=/index.ts'}`;
+        const fullUrl = `${proxyUrl}?${urlParam}=${encodeURIComponent(lineUrl)}&data=${encodeURIComponent(data)}${urlParam === 'url' ? '&type=/index.m3u8' : '&type=/index.ts'}`;
         rewrittenLines.push(fullUrl);
 
         isNextLineUri = false;
       } else {
         rewrittenLines.push(line);
       }
-    }
+    });
 
     return rewrittenLines.join('\n');
   } catch (err) {
