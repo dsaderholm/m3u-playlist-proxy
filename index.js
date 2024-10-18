@@ -296,7 +296,7 @@ label {
 
       if (isMaster) {
         const baseUrl = new URL(result.finalUrl).origin;
-        const proxyUrl = 'https://tv.saderholm.us';
+        const proxyUrl = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
         content = rewriteUrls(content, baseUrl, proxyUrl, query.data);
       }
 
