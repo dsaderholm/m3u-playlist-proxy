@@ -295,8 +295,8 @@ label {
       let content = result.content;
 
       if (isMaster) {
-        const baseUrl = 'tv.saderholm.us';
-        const proxyUrl = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+        const baseUrl = new URL(result.finalUrl).origin;
+        const proxyUrl = 'https://tv.saderholm.us';
         content = rewriteUrls(content, baseUrl, proxyUrl, query.data);
       }
 
@@ -409,6 +409,7 @@ async function handlePlaylistRequest(req, res, playlistUrl, data) {
     }
 
     let playlistContent = result.content;
+    const baseUrl = new URL(req.url, `http://${req.headers.host}`).origin;
     playlistContent = rewritePlaylistUrls(playlistContent, baseUrl, data);
 
     res.writeHead(200, { 'Content-Type': 'text/plain' });
