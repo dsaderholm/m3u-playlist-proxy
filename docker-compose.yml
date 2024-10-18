@@ -4,5 +4,3 @@ name: m3u-playlist-proxy
       build:
         context: .  # Path to the Dockerfile
         dockerfile: Dockerfile  # Name of the Dockerfile
-      ports:
-        - 4123:4123
