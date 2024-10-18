@@ -409,7 +409,6 @@ async function handlePlaylistRequest(req, res, playlistUrl, data) {
     }
 
     let playlistContent = result.content;
-    const baseUrl = new URL(req.url, `http://${req.headers.host}`).origin;
     playlistContent = rewritePlaylistUrls(playlistContent, baseUrl, data);
 
     res.writeHead(200, { 'Content-Type': 'text/plain' });
